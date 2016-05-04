@@ -1,0 +1,64 @@
+```{r global_options, include=FALSE}
+library(knitr)
+opts_chunk$set(fig.align="center", fig.height=4, fig.width=5)
+library(ggplot2)
+theme_set(theme_bw(base_size=12))
+library(dplyr)
+library(tidyr)
+library(grid)
+```
+## Project 3
+Rainier Ababao  
+rpa376  
+Vaishnavi Kashyap  
+vmk288
+
+### Introduction
+
+We are using the "Titanic: Machine Learning from Disaster" data set from Kaggle. The data can be downloaded as a .csv file from Kaggle at this [link](https://www.kaggle.com/c/titanic/download/train.csv). Each observation represents a recorded passenger on the Titanic, and there are 891 observations with 12 variables. The following schema from Kaggle describes the features of the data set:
+
+```
+survival        Survival
+                (0 = No; 1 = Yes)
+pclass          Passenger Class
+                (1 = 1st; 2 = 2nd; 3 = 3rd)
+name            Name
+sex             Sex
+age             Age
+sibsp           Number of Siblings/Spouses Aboard
+parch           Number of Parents/Children Aboard
+ticket          Ticket Number
+fare            Passenger Fare
+cabin           Cabin
+embarked        Port of Embarkation
+                (C = Cherbourg; Q = Queenstown; S = Southampton)
+```
+
+_(Aside: Kaggle does not release test set data so we are using the training set data, which readily contains truthy survival results)_
+
+### Question 1
+
+Were older people more likely to survive on the Titanic than younger people?
+
+We will perform an exploratory PCA with rotation matrix plot to see just how much the age has an influence on the survival label. Then, we'll see if the observations of those who survived cluster around the age.
+
+```{r}
+titanic <- read.csv("train.csv")
+```
+
+### Question 1 Discussion
+
+```{r}
+```
+
+### Question 2
+
+Were passengers with larger families more likely to survive than those with smaller families or those who traveled alone?
+
+We will plot the observations along a single axis that represents the number of people they brought on their family total, along with two more plots with axes that represent the number of siblings/spouses each passenger brought aboard and the number of parents/children they brought aboard, respectively.
+
+```{r}
+```
+
+### Question 2 Discussion
+
