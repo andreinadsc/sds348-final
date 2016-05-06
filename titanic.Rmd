@@ -15,7 +15,7 @@ vmk288
 
 ### Introduction
 
-We are using the "Titanic: Machine Learning from Disaster" data set from Kaggle. The data can be downloaded as a .csv file from Kaggle at this [link](https://www.kaggle.com/c/titanic/download/train.csv). Each observation represents a recorded passenger on the Titanic, and there are 891 observations with 12 variables. The following schema from Kaggle describes the features of the data set:
+We are using the "Titanic: Machine Learning from Disaster" data set from Kaggle. The data can be downloaded as a .csv file from Kaggle at this [link](https://www.kaggle.com/c/titanic/download/train.csv). (If asked to log in to Kaggle and you don't have an account, just download it from [here](https://github.com/rainiera/sds348-final/raw/master/train.csv) instead - just wanted to show provenance.) Each observation represents a recorded passenger on the Titanic, and there are 891 observations with 12 variables. The following schema from Kaggle describes the features of the data set:
 
 ```
 survival        Survival
@@ -38,27 +38,72 @@ _(Aside: Kaggle does not release test set data so we are using the training set 
 
 ### Question 1
 
-Were older people more likely to survive on the Titanic than younger people?
-
-We will perform an exploratory PCA with rotation matrix plot to see just how much the age has an influence on the survival label. Then, we'll see if the observations of those who survived cluster around the age.
+Are older or younger people who paid a higher fare more or less likely to survive on the Titanic?
 
 ```{r}
-titanic <- read.csv("train.csv")
+titanic <- tryCatch({
+    titanic <- read.csv("train.csv")
+}, error = function(err) {
+    titanic <- read.csv("https://github.com/rainiera/sds348-final/raw/master/train.csv")
+})
+
+# Reproducibility
+set.seed(1337)
+
+# Remove all rows with "NA" as age so median age is not affected
+newtitanic<-na.omit(titanic)
+
+# Find median fare paid; higher than the median would be a "higher fare"
+median(newtitanic$Fare) # the median fare is 15.74
+
+newtitanic %>% filter(Fare>=15.74) -> newT
+median(newT$Age) # People older than 31 will constitute as "older" while 31 and below are "younger"
+
+# Add a new factor, young and old (median age in the newT dataset is still 31)
+newT %>%
+    mutate(young = (Age <= 31)) -> newtitanic_young
+
+# Check to see if it's roughly half
+newtitanic_young %>%
+    filter(young) %>%
+    tally()  #188/358, so about 52.5% of the observations are "young"
+
+# Take out non-numerical data and perform k means
+newtitanic_young %>% select(Fare, Age) %>% kmeans(centers = 2) -> km
+titanic_clustered <- data.frame(newtitanic_young, cluster=factor(km$cluster))
+ggplot(titanic_clustered, aes(x=Fare, y=Age, color=as.factor(Survived), shape=cluster)) + geom_point()
 ```
 
 ### Question 1 Discussion
 
-```{r}
-```
+We performed a visualization of k-means clustering on the data to see if instances of surviving or not surviving cluster around age and fare. This analysis answers our question since we are looking for an association between the features "age", "fare", and the label of "survival", and k-means can group our observations based on these features while we simultaneously color them by whether or not they survived.
+
+When we clustered based on age and fare, we found that cluster 1 and 2 did demonstrate relationship, which shows that there is a slightly significant relationship between age and fare for whether a passenger survived or not. For example, the graph shows many more blue-colored dots under the median age, showing that younger people were more likely to survive. Out of those who paid a higher fare overall, very few did not survive. However, based on a slightly more numerical analysis as shown by the table created from the data, 55% of younger people who paid a higher fare survived, compared to 54% of older people who paid a higher fare who survived, which is not a significant difference, therefore data was inconclusive.
 
 ### Question 2
 
-Were passengers with larger families more likely to survive than those with smaller families or those who traveled alone?
-
-We will plot the observations along a single axis that represents the number of people they brought on their family total, along with two more plots with axes that represent the number of siblings/spouses each passenger brought aboard and the number of parents/children they brought aboard, respectively.
+Were passengers with larger families more likely to survive than those with smaller families/traveled alone?
 
 ```{r}
+# Remove any observations with missing values for the number of siblings or number of spouses
+titanic %>%
+    remove_missing(vars=c("SibSp", "Parch")) -> titanic_nona
+
+# Visualize the amounts with a histogram
+ggplot(titanic_nona, aes(SibSp+Parch)) +
+    geom_histogram(breaks=seq(0, 8, by=1), col="black", fill="#f08080")
+
+titanic_nona %>%
+    ggplot(aes(as.factor(Survived), SibSp + Parch, fill=factor(Survived))) +
+    geom_boxplot(outlier.colour="green") +
+    geom_jitter(width=0.5) +
+    coord_cartesian(ylim = c(0, 12))
+
 ```
 
 ### Question 2 Discussion
+
+We plotted the observations against an axis that represents the number of family members each passenger brought in total, along a label of whether they survived or not. This box-and-whisker plot representation makes sense because it allows us to easily see the distribution of the number of family members that the passengers brought onboard, and we can compare these variables for those who survived and those who did not side-by-side.
+
+First, we visualized the amounts with a histogram to see how the spread was for the number of family members brought aboard. Plotting the spread is crucial for visualizing the proportion of those which brought family members. Then we plotted the observations on a box-and-whisker plot with the survivors and non-survivors against the number of family members brought aboard. When examined side-by-side, we see the median family members aboard of those who survived to be 0 and those who did not survive to be approximately 1. With some jitter set on the plot to visually spread out the data points, we can also see a large cluster around 0 family members brought aboard on the side for those who did not survive. Overall, this means that per the plot, the majority of those who survived on the Titanic did have some family aboard.
 
